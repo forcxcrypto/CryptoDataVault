@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CryptoDataVault {
+    struct DataRecord {
+        address owner;
+        bytes encryptedData;
+        bool exists;
+    }
+
+    mapping(bytes32 => DataRecord) private dataRecords;
+
+    // Events
+    event DataStored(bytes32 indexed dataHash, address indexed owner);
+    event DataUpdated(bytes32 indexed dataHash, address indexed owner);
+    event DataDeleted(bytes32 indexed dataHash, address indexed owner);
+
+    // Store encrypted data
+    function storeData(bytes32 dataHash, bytes memory encryptedData) external {
+        require(!dataRecords[dataHash].exists, "Data already exists");
+
+        dataRecords[dataHash] = DataRecord({
+            owner: msg.sender,
+            encryptedData: encryptedData,
+            exists: true
+        });
+
+        emit DataStored(dataHash, msg.sender);
+    }
+
+    // Update encrypted data
+    function updateData(bytes32 dataHash, bytes memory encryptedData) external {
+        require(dataRecords[dataHash].exists, "Data does not exist");
+        require(dataRecords[dataHash].owner == msg.sender, "Unauthorized");
+
+        dataRecords[dataHash].encryptedData = encryptedData;
+
+        emit DataUpdated(dataHash, msg.sender);
+    }
+
+    // Retrieve encrypted data
+    function retrieveData(bytes32 dataHash) external view returns (bytes memory) {
+        require(dataRecords[dataHash].exists, "Data does not exist");
+
+        return dataRecords[dataHash].encryptedData;
+    }
+
+    // Delete encrypted data
+    function deleteData(bytes32 dataHash) external {
+        require(dataRecords[dataHash].exists, "Data does not exist");
+        require(dataRecords[dataHash].owner == msg.sender, "Unauthorized");
+
+        delete dataRecords[dataHash];
+
+        emit DataDeleted(dataHash, msg.sender);
+    }
+}
